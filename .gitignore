@@ -1,0 +1,17 @@
+# Environnement virtuels
+env/
+venv/
+.env
+
+# Données brutes de scraping (ne jamais envoyer de gros CSV/JSON sur Git)
+*.csv
+*.json
+data/
+
+# Caches système et Jupyter
+__pycache__/
+.DS_Store
+.ipynb_checkpoints/
+
+# Fichiers de log de Scrapy
+*.log
