@@ -1,17 +1,15 @@
-# Environnement virtuels
-env/
-venv/
+cat > .gitignore <<'EOF'
+# Secrets : ne jamais envoyer sur GitHub
 .env
 
-# Données brutes de scraping (ne jamais envoyer de gros CSV/JSON sur Git)
-*.csv
-*.json
-data/
-
-# Caches système et Jupyter
+# Environnement Python et fichiers temporaires
+env/
+venv/
 __pycache__/
-.DS_Store
 .ipynb_checkpoints/
-
-# Fichiers de log de Scrapy
+.DS_Store
 *.log
+
+# Anciens dossiers de travail
+csv/
+EOF
