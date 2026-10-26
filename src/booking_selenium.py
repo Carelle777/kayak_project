@@ -14,7 +14,10 @@ CSV_DIR = PROJECT_ROOT / "csv"
 
 options = Options()
 options.add_argument("--window-size=1920,1080")
-options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+options.add_argument(
+    "user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36"
+)
 
 driver = webdriver.Chrome(options=options)
 
@@ -46,7 +49,9 @@ for city in top5_cities:
             "name": hotel.xpath('.//div[@data-testid="title"]/text()').get(),
             "url": hotel.xpath('.//a[@data-testid="title-link"]/@href').get(),
             "rating": hotel.xpath('.//div[@data-testid="review-score"]//text()').get(),
-            "description": hotel.xpath('.//div[not(*)][string-length(normalize-space(text())) > 40]/text()').get(),
+            "description": hotel.xpath(
+                './/div[not(*)][string-length(normalize-space(text())) > 40]/text()'
+            ).get(),
         })
 
 driver.quit()
