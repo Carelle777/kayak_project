@@ -53,19 +53,60 @@ La météo change tous les jours. J'ai donc **figé une photo** (les fichiers CS
 ⚠️ **Bormes-les-Mimosas n'a aucun hôtel** : c'est une ville du Top 5 d'aujourd'hui, mais ma collecte du mois d'août ne la contenait pas, et Booking a bloqué mon robot quand j'ai voulu le relancer (voir les limites).
 
 ## 4. Les deux cartes
-- **Carte 1** : les 5 meilleures destinations selon la météo.
-- **Carte 2** : les 20 hôtels les mieux notés parmi mes 100 hôtels.
+- **Carte 1** : les 5 meilleures destinations selon la météo. La couleur montre la température moyenne (`avg_temp`, en °C). Le titre de la carte dit « les plus ensoleillées », mais le classement est fait avec mon **score météo** (température moyenne moins le risque de pluie), pas avec les heures de soleil.
+
+![Carte 1 : Top 5 des destinations](docs/carte_top5.png)
+
+- **Carte 2** : les 20 hôtels les mieux notés parmi mes 100 hôtels. Une couleur par ville. Bormes-les-Mimosas n'apparaît pas : je n'ai collecté aucun hôtel là-bas.
+
+![Carte 2 : Top 20 des hôtels](docs/carte_hotels.png)
+
 
 Les hôtels n'ont pas leur vraie adresse GPS dans mes données, seulement celle de leur **ville**. Pour les voir séparément, je les décale très légèrement autour du centre-ville : **leur position sur la carte est donc approximative.**
 
 ## 5. Le cloud AWS
 
+Quand mon fichier final est prêt, je l'envoie dans le cloud d'Amazon (AWS), à deux endroits :
+
 | Élément | Rôle | État |
 |---|---|---|
-| **S3** (bucket `kayak-datalake-jedha-carelle-2026`, région `eu-west-3`) | « Garage » du projet : on y dépose le fichier final tel quel | ✅ bucket créé |
-| **RDS PostgreSQL** (table `destinations_hotels`) | Base de données où l'on pose des questions en SQL | ⚠️ à créer le 24 octobre, pour limiter les frais, puis supprimée après le jury |
+| **S3** (bucket `kayak-datalake-jedha-carelle-2026`, région `eu-west-3`) | « Garage » du projet : on y dépose le fichier final tel quel | ✅ `kayak_final_dataset.csv` envoyé le 26 octobre 2026 |
+| **RDS PostgreSQL** (base `kayak-db`, table `destinations_hotels`) | Base de données où l'on pose des questions en SQL | ✅ table créée avec mes 100 hôtels |
 
-*(Cette section sera complétée avec mes captures d'écran et mes requêtes SQL une fois la base RDS créée.)*
+L'envoi est fait par la cellule « Déploiement Cloud » du notebook. Elle est réglée sur `ENVOYER_SUR_AWS = False` pour ne rien envoyer par accident. Le 26 octobre, j'ai exécuté **le même code** depuis le Terminal, pour ne pas relancer la météo en direct (qui aurait changé mes fichiers).
+
+### Mes preuves
+
+**1. La base RDS est disponible**
+
+![Base RDS disponible](docs/rds_disponible.png)
+
+**2. Le fichier est dans le compartiment S3**
+
+![Compartiment S3](docs/s3_bucket.png)
+
+**3. L'envoi a réussi** (100 hôtels lus, envoyés sur S3, puis écrits dans RDS)
+
+![Envoi vers S3 et RDS](docs/envoi_s3_rds.png)
+
+### Mes 5 requêtes SQL
+
+Elles sont dans `sql/requetes_rds.sql`. Je les lance avec `python requetes_rds.py` (depuis le dossier `src`), qui les envoie à la base et affiche les résultats.
+
+![Résultats des requêtes SQL](docs/sql_resultats.png)
+
+Ce que je lis dans les résultats :
+- **100 hôtels** dans la base, **25 par ville** (Bayonne, Biarritz, Collioure, Saintes Maries de la mer).
+- **1 hôtel sans note**, à Bayonne. Il est ignoré dans les moyennes.
+- **Note moyenne par ville** : Collioure 8,83 · Saintes Maries de la mer 8,59 · Biarritz 8,50 · Bayonne 8,10.
+- **Meilleur hôtel** : la Résidence L'Oiseau des Mers (Saintes Maries de la mer), note 9,8.
+- Bayonne est la **n°1 en météo** mais a les hôtels les moins bien notés : le « meilleur » choix dépend de ce qui compte le plus (météo ou hôtel).
+
+> Les notes viennent de Booking, collectées le 26 août 2026.
+
+### Après le jury
+
+Je supprime la base RDS le jour du jury (29 octobre 2026) pour ne pas payer de frais. Les captures ci-dessus restent comme preuve.
 
 ## 6. Lancer le projet
 
@@ -78,7 +119,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Ouvrir ensuite le fichier `.env` et écrire ma clé OpenWeather après `OPENWEATHER_API_KEY=` (les clés AWS ne sont nécessaires que pour l'étape cloud). Puis ouvrir `src/kayak_data_pipeline.ipynb` dans VS Code.
+Ouvrir ensuite le fichier `.env` et remplir : `OPENWEATHER_API_KEY=` (clé OpenWeather). Pour l'étape cloud seulement : `AWS_ACCESS_KEY_ID=` et `AWS_SECRET_ACCESS_KEY=` (clés AWS), `RDS_ENDPOINT=` (adresse de la base) et `RDS_PASSWORD=` (mot de passe de la base). Puis ouvrir `src/kayak_data_pipeline.ipynb` dans VS Code.
 
 > ⚠️ La météo est « en direct » : si on relance la partie météo, le Top 5 change. Les fichiers CSV fournis sont la photo du 8 octobre 2026, ils servent de référence.
 
@@ -92,13 +133,17 @@ kayak_project/
 ├── requirements.txt             ← la liste des outils Python à installer
 ├── .env.example                 ← modèle du fichier de clés (sans aucune clé)
 ├── .gitignore                   ← fichiers que Git ne doit jamais envoyer
+├── docs/                        ← mes captures d'écran (preuves du cloud)
+├── sql/
+│   └── requetes_rds.sql         ← mes 5 requêtes SQL
 └── src/
     ├── kayak_data_pipeline.ipynb  ← le notebook principal (toutes les étapes)
     ├── booking_selenium.py        ← le robot qui collecte les hôtels
     ├── hotels_raw.json            ← hôtels bruts collectés le 26 août (125)
     ├── kayak_weather_dataset.csv  ← météo des 35 villes (photo du 8 octobre)
     ├── top_5_destinations.csv     ← les 5 meilleures villes
-    └── kayak_final_dataset.csv    ← fichier final : hôtels + météo (100 hôtels)
+    ├── kayak_final_dataset.csv    ← fichier final : hôtels + météo (100 hôtels)
+    └── requetes_rds.py            ← lance mes requêtes SQL sur la base RDS
 ```
 
 ## 8. Limites (ce que je sais que le projet ne fait pas bien)
@@ -108,6 +153,9 @@ kayak_project/
 - **Position des hôtels approximative** (voir section 4).
 - **La météo est une prévision à 5 jours**, pas une moyenne sur plusieurs années.
 - **Le score météo est un choix personnel**, il pourrait être amélioré (ajouter le vent, l'ensoleillement…).
+- **Un seul hôtel n'a pas de note** (à Bayonne). Il est dans la base mais ignoré dans les moyennes.
+- **Les notes datent du 26 août 2026** (collecte Booking) : elles ont pu changer depuis.
+- **La base RDS est supprimée après le jury.** Pour relancer `requetes_rds.py`, il faudrait recréer une base et renvoyer le fichier (cellule du notebook avec `ENVOYER_SUR_AWS = True`). Mes captures de la section 5 restent la preuve.
 
 ## 9. Lexique (mots techniques expliqués simplement)
 
